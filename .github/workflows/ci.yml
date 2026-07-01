@@ -8,7 +8,7 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - name: system deps (OpenMP runtime for LightGBM/XGBoost via flaml)
@@ -28,7 +28,7 @@ jobs:
   golden-parity:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - run: pip install -e ".[dev]"
@@ -46,7 +46,7 @@ jobs:
   license-audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       # Audit the FULL resolved graph INCLUDING optional profiles (autogluon, spark, dashboard).
@@ -59,7 +59,7 @@ jobs:
   docker-and-demo:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: build images
         run: docker compose build
       - name: trivy scan
