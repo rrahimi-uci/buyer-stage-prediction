@@ -1,7 +1,7 @@
 # Multi-stage image shared by the `dagster` and `api` services.
 # Phase-0 skeleton: builds the framework package and installs the core deps.
 
-FROM python:3.11-slim AS base
+FROM python:3.14-slim AS base
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
