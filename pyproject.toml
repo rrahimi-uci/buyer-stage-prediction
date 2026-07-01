@@ -22,7 +22,7 @@ dependencies = [
     "scikit-learn~=1.5",
     "mlflow>=2.18,<4.0",
     "pandera~=0.20",
-    "evidently==0.4.40",     # pinned Apache-2.0 release; SaaS extras excluded
+    "evidently==0.7.21",     # pinned Apache-2.0 release; SaaS extras excluded
     "apprise~=1.9",
     "pydantic~=2.9",
     "pydantic-settings~=2.5",
