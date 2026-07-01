@@ -1,0 +1,54 @@
+# Buyer-stage feature handling — ported verbatim from the original src_etl/config/constants.py.
+# Drives etl/reshape.py: which columns one-hot, which clip at 180, which coalesce-to-0.
+# Each entry is expanded across the 5 windows (suffix _001/_007/_030/_060/_090).
+
+# Categorical -> one-hot (0/1 per value). Only ldp_dominant_segment was active in the original.
+one_hot:
+  ldp_dominant_segment:
+    - "for sale"
+    - "not for sale"
+    - "for rent"
+    - "no_segment"
+
+# Dwell-time columns clipped to a 180s ceiling (original default_dwell_threshhold = 180).
+clip:
+  average_ldp_dwell_time_seconds: 180
+  total_ldp_dwell_time_seconds: 180
+  median_ldp_dwell_time_seconds: 180
+  total_srp_dwell_time_seconds: 180
+  average_srp_dwell_time_seconds: 180
+  median_srp_dwell_time_seconds: 180
+  total_lead_dwell_time_seconds: 180
+  average_lead_dwell_time_seconds: 180
+  median_lead_dwell_time_seconds: 180
+
+# Count/numeric columns coalesced to 0 when null (original cols_with_nulls + base query).
+coalesce_default:
+  total_ldp_page_views: 0
+  median_ldp_page_views: 0
+  average_ldp_page_views: 0
+  total_distinct_listings_viewed: 0
+  total_listings_viewed: 0
+  median_listings_viewed: 0
+  average_listings_viewed: 0
+  total_searches: 0
+  median_searches: 0
+  average_searches: 0
+  total_saved_listings: 0
+  total_shared_listings: 0
+  total_saved_searches: 0
+  total_shared_searches: 0
+  total_leads_submitted: 0
+  submitted_leads_for_rent: 0
+  submitted_leads_for_sale: 0
+  submitted_leads_not_for_sale: 0
+
+# Columns dropped before modeling (subset of the original cols_to_drop; the full 60+ list
+# is reproduced by seed_raw.py when reconstructing from raw windowed tables).
+drop:
+  - run_date_mst_yyyymmdd
+  - number_of_visits
+  - is_registered_user
+
+# The canonical 228-feature column order is a DERIVED golden artifact, not inlined here.
+column_order_artifact: golden/column_order.txt

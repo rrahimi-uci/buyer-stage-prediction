@@ -1,0 +1,40 @@
+# Keep the build context small and reproducible (the Dockerfile does `COPY . .`).
+.git
+.github
+.gitignore
+.dockerignore
+
+# Local state / artifacts that must never bake into an image layer
+.env
+.env.*
+!.env.example
+mlruns/
+data/
+*.duckdb
+*.duckdb.wal
+
+# Python caches & tooling
+__pycache__/
+*.py[cod]
+.venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage_html_report/
+
+# Example data (provenance — never ship in the image)
+examples/*/sample_data/*.csv
+examples/*/sample_data/*.parquet
+
+# Docs & infra not needed at runtime
+docs/
+infra/
+*.md
+!README.md
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

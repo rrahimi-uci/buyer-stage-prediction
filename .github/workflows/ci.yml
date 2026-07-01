@@ -1,0 +1,68 @@
+name: ci
+
+on:
+  push: { branches: [main] }
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: system deps (OpenMP runtime for LightGBM/XGBoost via flaml)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libgomp1
+      - run: pip install -e ".[dev]"
+      - name: lint
+        run: ruff check .
+      - name: format check
+        run: ruff format --check .
+      - name: typecheck
+        run: mypy
+      - name: tests (unit + full end-to-end + Dagster materialize, on SQLite — no servers)
+        run: pytest --cov=automl_template
+      - name: secrets guard (no committed .env)
+        run: test ! -f .env
+
+  golden-parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -e ".[dev]"
+      # Compares DuckDB reshape output to the checked-in, PR-reviewed golden fixture.
+      # Guard on existence WITHOUT masking failures: once test_parity.py lands, a real
+      # failure blocks CI (the old `|| echo` swallowed collection errors and reported green).
+      - name: golden parity
+        run: |
+          if [ -f tests/test_parity.py ]; then
+            pytest tests/test_parity.py
+          else
+            echo "parity test not yet added (phase-1) — skipping"
+          fi
+
+  license-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      # Audit the FULL resolved graph INCLUDING optional profiles (autogluon, spark).
+      - run: pip install -e ".[dev,autogluon,spark]" pip-licenses
+      - name: fail on copyleft (AGPL/SSPL/BSL) in installed deps
+        run: |
+          pip-licenses --format=csv --with-urls > licenses.csv
+          ! grep -Ei 'AGPL|SSPL|Business Source|BSL' licenses.csv
+
+  docker-and-demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: build images
+        run: docker compose build
+      - name: trivy scan
+        uses: aquasecurity/trivy-action@master
+        with: { scan-type: fs, scan-ref: . }
+      # TODO(phase-1): regression gate — `make demo` end-to-end on synthetic sample_data.

@@ -1,0 +1,42 @@
+# Generic pipeline config template. Copy into examples/<domain>/pipeline.yaml and edit.
+# Every field here is DOMAIN data — the framework reads it, never hardcodes it.
+
+# --- problem definition ---
+target: "<TARGET_COLUMN>"          # e.g. buyer_stage
+entity_key: "<ENTITY_KEY>"         # carried in feature_matrix, EXCLUDED from features, = online PK
+problem_type: "multiclass"         # multiclass | binary | regression
+labels: ["<CLASS_A>", "<CLASS_B>"] # required for classification; order is canonical
+metric: "macro_f1"                 # FLAML metric; matches the original SageMaker F1macro
+
+# --- feature windows (suffixes appended to per-window features) ---
+windows: ["001", "007", "030", "060", "090"]
+
+# --- AutoML budget ---
+automl:
+  engine: "flaml"                  # flaml (default) | autogluon (optional profile)
+  time_budget_seconds: 120
+  max_candidates: 20               # parity with the original AUTOML_MAX_CANDIDATE
+  seed: 42
+
+# --- conditional-retrain policy (fixes the original stale-model bug) ---
+retrain:
+  max_model_age_days: 14
+  drift_threshold: 0.30            # Evidently dataset_drift_share above which we retrain
+
+# --- model promotion gate ---
+promotion:
+  margin: 0.0                      # promote challenger iff macro_f1 > champion + margin
+  require_manual_promotion: false  # set true in prod to require a manual MLflow alias
+
+# --- data validation ---
+validation:
+  min_rows_per_class: 50
+  pit_window_days: 2               # ±N-day symmetric label join window (NOT feature_ts <= label_ts)
+
+# --- online store ---
+online_store:
+  ttl_days: 7                      # prediction eviction horizon (original DDB ttl)
+
+# --- drift reference ---
+drift:
+  reference_run_date: "champion"   # "champion" = the partition the current champion trained on

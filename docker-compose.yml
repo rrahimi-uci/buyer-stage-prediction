@@ -1,0 +1,108 @@
+# tabular-automl-template — single-node, portable stack.
+# Default profile `core` = 5 services. Optional profiles: monitoring / spark / autogluon.
+#
+# LICENSE NOTE: every image in `core` is permissively licensed. Grafana (monitoring
+# profile) is AGPL-3.0 and is OFF by default — do not enable in a redistributed product
+# without reviewing docs/LICENSES.md.
+
+services:
+  # ---- Platform DB: Dagster run/event storage + MLflow backend store ----------
+  postgres-platform:
+    image: postgres:16
+    profiles: ["core"]
+    environment:
+      POSTGRES_USER: platform
+      POSTGRES_PASSWORD: platform
+      POSTGRES_DB: platform
+    volumes:
+      - pg_platform:/var/lib/postgresql/data
+    ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U platform"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ---- Serving DB: predictions_online only (schema created by the app, no init.sql) -------
+  postgres-serving:
+    image: postgres:16
+    profiles: ["core"]
+    environment:
+      POSTGRES_USER: serving
+      POSTGRES_PASSWORD: serving
+      POSTGRES_DB: serving
+    volumes:
+      - pg_serving:/var/lib/postgresql/data
+    ports: ["5433:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U serving"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ---- MLflow tracking + registry --------------------------------------------
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.18.0
+    profiles: ["core"]
+    depends_on:
+      postgres-platform:
+        condition: service_healthy
+    command: >
+      mlflow server --host 0.0.0.0 --port 5000
+      --backend-store-uri postgresql+pg8000://platform:platform@postgres-platform:5432/platform
+      --artifacts-destination /mlruns --serve-artifacts
+    volumes:
+      - mlruns:/mlruns
+    ports: ["5000:5000"]
+
+  # ---- Dagster: webserver + daemon (schedules/sensors) + code location --------
+  dagster:
+    build: { context: ., target: dagster }
+    profiles: ["core"]
+    environment:
+      PIPELINE_CONFIG: examples/buyer_stage/pipeline.yaml
+      SERVING_DB_URL: postgresql+pg8000://serving:serving@postgres-serving:5432/serving
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      APPRISE_URL: ${APPRISE_URL:-}
+    depends_on:
+      postgres-platform: { condition: service_healthy }
+      postgres-serving: { condition: service_healthy }
+      mlflow: { condition: service_started }
+    volumes:
+      - ./:/app
+      - mlruns:/mlruns
+    ports: ["3000:3000"]
+
+  # ---- FastAPI serving (least privilege: only serving DB + MLflow) ------------
+  api:
+    build: { context: ., target: api }
+    profiles: ["core"]
+    environment:
+      SERVING_DB_URL: postgresql+pg8000://serving:serving@postgres-serving:5432/serving
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    depends_on:
+      postgres-serving: { condition: service_healthy }
+    ports: ["8000:8000"]
+    # Gate readiness so `make demo`'s smoke test never races a cold-starting uvicorn.
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ---- OPTIONAL: metrics (Prometheus Apache-2.0; Grafana AGPL, OFF by default) -
+  prometheus:
+    image: prom/prometheus:v3.1.0   # pinned (not :latest) so the CI license audit is deterministic
+    profiles: ["monitoring"]
+    ports: ["9090:9090"]
+  # grafana:  # ⚠ AGPL-3.0 — enabling it in a HOSTED or REDISTRIBUTED product triggers AGPL
+  #            #   network-use source-disclosure. Do NOT uncomment for a commercial product.
+  #            #   For a permissive dashboard, prefer Perses (Apache-2.0). See docs/LICENSES.md.
+  #   image: grafana/grafana:11.4.0
+  #   profiles: ["monitoring"]
+  #   ports: ["3001:3000"]
+
+volumes:
+  pg_platform:
+  pg_serving:
+  mlruns:

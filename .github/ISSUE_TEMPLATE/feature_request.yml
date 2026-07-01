@@ -1,0 +1,39 @@
+name: Feature request
+description: Suggest an enhancement or a new example
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What are you trying to do that the template doesn't support today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would you like to see? Note if it touches framework vs. example.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Orchestration (Dagster)
+        - ETL / reshape (DuckDB/Polars)
+        - AutoML / registry (FLAML/MLflow)
+        - Online store / serving (Postgres/FastAPI)
+        - Drift / validation / notifications
+        - Packaging / infra / CI
+        - New example
+        - Docs
+    validations:
+      required: true
+  - type: checkboxes
+    id: licensing
+    attributes:
+      label: Licensing
+      options:
+        - label: Any new dependency I'm proposing is permissively licensed (Apache-2.0/MIT/BSD), or I've flagged it.

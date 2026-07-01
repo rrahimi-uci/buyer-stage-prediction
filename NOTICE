@@ -1,0 +1,12 @@
+tabular-automl-template
+Copyright 2026 tabular-automl-template contributors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product bundles no third-party source code. At runtime it depends on separately-installed
+open-source packages, each under its own permissive license (Apache-2.0 / MIT / BSD / PostgreSQL
+License). See docs/LICENSES.md for the per-dependency audit.
+
+The included worked example under examples/buyer_stage/ describes a real-estate "buyer stage"
+classification problem for illustration only. No proprietary datasets are distributed with this
+repository; sample data must be supplied by the user (see examples/buyer_stage/README.md).

@@ -1,0 +1,38 @@
+name: Bug report
+description: Report a defect in the framework, example, or docs
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Clear description of the bug and the expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps / command (e.g. `make demo`, a failing test, a code snippet).
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      description: Git commit or tag you are on.
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: OS, Python version, Docker version, and whether running locally or in compose.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / traceback
+      render: shell

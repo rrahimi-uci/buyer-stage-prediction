@@ -1,0 +1,39 @@
+# Buyer-stage worked example — the ONLY place this domain is defined.
+# Reconstructs the original real-estate buyer-stage classifier.
+
+target: buyer_stage
+entity_key: member_id
+problem_type: multiclass
+# Order is canonical. Class counts in sample_data: 2076 / 684 / 642 / 598.
+labels:
+  - "Active Searcher"
+  - "Ready to Transact"
+  - "Dreamer"
+  - "Casual Explorer"
+metric: macro_f1
+
+windows: ["001", "007", "030", "060", "090"]
+
+automl:
+  engine: flaml
+  time_budget_seconds: 120
+  max_candidates: 20          # original AUTOML_MAX_CANDIDATE
+  seed: 42
+
+retrain:
+  max_model_age_days: 14
+  drift_threshold: 0.30
+
+promotion:
+  margin: 0.0
+  require_manual_promotion: false
+
+validation:
+  min_rows_per_class: 50
+  pit_window_days: 2          # original symmetric ±2-day survey join
+
+online_store:
+  ttl_days: 7
+
+drift:
+  reference_run_date: champion
