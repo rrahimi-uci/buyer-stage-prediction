@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with: { python-version: "3.11" }
       - name: system deps (OpenMP runtime for LightGBM/XGBoost via flaml)
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libgomp1
@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with: { python-version: "3.11" }
       - run: pip install -e ".[dev]"
       # Compares DuckDB reshape output to the checked-in, PR-reviewed golden fixture.
@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with: { python-version: "3.11" }
       # Audit the FULL resolved graph INCLUDING optional profiles (autogluon, spark, dashboard).
       - run: pip install -e ".[dev,autogluon,spark,dashboard]" pip-licenses
