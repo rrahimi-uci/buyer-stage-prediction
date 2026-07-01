@@ -49,8 +49,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
-      # Audit the FULL resolved graph INCLUDING optional profiles (autogluon, spark).
-      - run: pip install -e ".[dev,autogluon,spark]" pip-licenses
+      # Audit the FULL resolved graph INCLUDING optional profiles (autogluon, spark, dashboard).
+      - run: pip install -e ".[dev,autogluon,spark,dashboard]" pip-licenses
       - name: fail on copyleft (AGPL/SSPL/BSL) in installed deps
         run: |
           pip-licenses --format=csv --with-urls > licenses.csv

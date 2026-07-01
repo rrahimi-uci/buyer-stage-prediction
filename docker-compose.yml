@@ -47,10 +47,18 @@ services:
     depends_on:
       postgres-platform:
         condition: service_healthy
-    command: >
-      mlflow server --host 0.0.0.0 --port 5000
-      --backend-store-uri postgresql+pg8000://platform:platform@postgres-platform:5432/platform
-      --artifacts-destination /mlruns --serve-artifacts
+    # NOTE: pg8000 (the project's pure-python, LGPL-avoiding Postgres driver) is INCOMPATIBLE with
+    # the MLflow server — SQLAlchemy renders `::VARCHAR` casts that Postgres rejects against MLflow's
+    # integer experiment_id column ("operator does not exist: integer = character varying"). psycopg
+    # would work but is LGPL (the repo avoids it), so the server uses a SQLite backend on the shared
+    # mlruns volume: the same registry-capable store the zero-server local mode already relies on.
+    command:
+      - sh
+      - -c
+      - >
+        exec mlflow server --host 0.0.0.0 --port 5000
+        --backend-store-uri sqlite:////mlruns/mlflow.db
+        --artifacts-destination /mlruns --serve-artifacts
     volumes:
       - mlruns:/mlruns
     ports: ["5000:5000"]
@@ -72,6 +80,14 @@ services:
       - ./:/app
       - mlruns:/mlruns
     ports: ["3000:3000"]
+    # The `./:/app` bind mount masks the image's built-in DAGSTER_HOME (/app/.dagster), so
+    # recreate it at startup before launching the webserver+daemon.
+    command:
+      - sh
+      - -c
+      - >
+        mkdir -p /app/.dagster &&
+        exec dagster dev -m automl_template.dagster_defs.definitions -h 0.0.0.0 -p 3000
 
   # ---- FastAPI serving (least privilege: only serving DB + MLflow) ------------
   api:
@@ -89,6 +105,29 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  # ---- OPTIONAL: Streamlit control panel (Apache-2.0; `dashboard` profile) -----
+  # Launches/observes the pipeline from a browser. Shares the dagster service's environment
+  # (it drives run_pipeline in-process and reads the serving DB + MLflow + offline data).
+  dashboard:
+    build: { context: ., target: dashboard }
+    profiles: ["dashboard"]
+    environment:
+      PIPELINE_CONFIG: examples/buyer_stage/pipeline.yaml
+      SERVING_DB_URL: postgresql+pg8000://serving:serving@postgres-serving:5432/serving
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      APPRISE_URL: ${APPRISE_URL:-}
+      # URLs are for the Health tab's tiles + deep links only.
+      API_URL: http://api:8000
+      DAGSTER_URL: http://dagster:3000
+      MLFLOW_UI_URL: http://mlflow:5000
+    depends_on:
+      postgres-serving: { condition: service_healthy }
+      mlflow: { condition: service_started }
+    volumes:
+      - ./:/app
+      - mlruns:/mlruns
+    ports: ["8501:8501"]
 
   # ---- OPTIONAL: metrics (Prometheus Apache-2.0; Grafana AGPL, OFF by default) -
   prometheus:

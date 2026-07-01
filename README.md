@@ -19,6 +19,20 @@ The original real-estate **buyer-stage** classifier ships only as the worked exa
 [`examples/buyer_stage/`](examples/buyer_stage/) — all domain knowledge lives in data (YAML + seed
 loader), never in framework code.
 
+## What you get
+
+- **One command to run everything** — `./start.sh` builds and starts the whole stack; `./stop.sh`
+  tears it down. (Or `pip install` + `automl-run` for a zero-Docker, SQLite-only loop.)
+- **A visual control panel** — a [Streamlit dashboard](dashboard/) to launch pipeline runs, tune
+  the config, and watch the champion model, predictions, and service health **live in the browser**.
+- **A complete ML pipeline** — reshape → validate (Pandera + a ±2-day point-in-time contract) →
+  AutoML train (FLAML, macro-F1) → champion/challenger promotion (MLflow registry) → batch score →
+  atomic swap into an online store → serve over FastAPI, with drift monitoring and notifications.
+- **Real orchestration** — the exact same flow runs as one [Dagster](https://dagster.io) job (asset
+  graph, schedules, sensors, asset checks) with a UI at `:3000`.
+- **Bring your own domain** — `make new-example`, edit two YAML files, drop in your data. The
+  framework carries **zero domain knowledge**, so no framework edits are needed.
+
 ## Stack
 
 | Layer | Tool | License |
@@ -31,6 +45,7 @@ loader), never in framework code.
 | Tracking + registry | MLflow | Apache-2.0 |
 | Online store | SQLite (local) / PostgreSQL (compose) | MIT / PostgreSQL |
 | Serving API | FastAPI | MIT |
+| Dashboard (optional) | Streamlit | Apache-2.0 |
 | Validation | Pandera | MIT |
 | Drift | Evidently | Apache-2.0 |
 | Notifications | Apprise | BSD-2 |
@@ -49,35 +64,47 @@ src/automl_template/   framework — ZERO domain knowledge
   constants.py errors.py config.py   shared names · typed errors · settings/config
   compute · etl · schemas · ml · store · monitoring · notify · dagster_defs
 api/                   FastAPI online-serving app
+dashboard/             optional Streamlit control panel (launch · configure · observe)
 examples/buyer_stage/  the worked example — domain config + data loader + synthetic fallback ONLY
 config/                generic pipeline config template
 tests/                 unit + full end-to-end + Dagster-materialize (run on SQLite, no servers)
 docs/                  ARCHITECTURE (deep plan) · ADAPTING (BYO domain) · LICENSES (audit)
 infra/                 optional OpenTofu (VM) + Helm (K8s) deploy stubs
+start.sh · stop.sh     one-command Docker up/down (with health checks + URLs)
 ```
 
 ## Quickstart
 
-**No Docker** (fastest — what CI runs):
+### Fastest — one command (Docker)
 
 ```bash
-pip install -e ".[dev]"
+./start.sh --demo     # build + start the full stack, seed data, run the pipeline once
+```
+
+Then open the **dashboard at http://localhost:8501**. Stop with `./stop.sh` (add `--reset` to also
+wipe the data volumes). `./start.sh` (no flag) just brings the stack up; `--build` forces a rebuild.
+
+| Service | URL | What |
+|---|---|---|
+| **Dashboard** | http://localhost:8501 | launch runs, tune config, watch model + predictions + health |
+| Dagster | http://localhost:3000 | orchestration UI (asset graph, schedules, runs) |
+| MLflow | http://localhost:5000 | experiment tracking + model registry |
+| FastAPI | http://localhost:8000/docs | serving API (`GET /predict/{entity_id}`) |
+
+### Zero-Docker (SQLite only — fastest inner loop, what CI runs)
+
+```bash
+pip install -e ".[dev,dashboard]"
 pytest                                     # full suite on SQLite + SQLite-backed MLflow
 python -m examples.buyer_stage.seed_raw    # seed (synthetic fallback if CSVs absent)
 automl-run                                 # train → score → load the local serving store
+streamlit run dashboard/app.py             # optional: the dashboard on :8501
 ```
 
-**Full stack** (Docker):
+The pipeline runs end-to-end (train cold-start → register/promote champion → batch-score → atomic
+swap into the serving store → serve), on SQLite with **zero external services**.
 
-```bash
-cp .env.example .env          # defaults work as-is
-make demo                     # up + seed + run pipeline + smoke-test GET /predict
-```
-
-`make demo` brings up the `core` services, seeds the example (synthetic data if the proprietary
-CSVs aren't present), runs the pipeline end-to-end (train cold-start → register/promote champion →
-batch-score → atomic swap into the serving store), then curls `GET /predict/{entity_id}` and asserts
-a 200 with a `predicted_class` in the configured labels.
+### Make targets
 
 | Command | Does |
 |---|---|
@@ -86,6 +113,7 @@ a 200 with a `predicted_class` in the configured labels.
 | `make run` | run the full pipeline once (CLI) |
 | `make materialize` | run the same flow through the Dagster job (graph + checks) |
 | `make serve` | (re)start the FastAPI service |
+| `make dashboard` | start the optional Streamlit control panel on :8501 ([dashboard/](dashboard/)) |
 | `make test` / `make lint` | pytest / ruff + mypy |
 | `make new-example NAME=foo` | scaffold a new example from the template |
 

@@ -14,11 +14,16 @@ env/
 .ruff_cache/
 .coverage
 coverage_html_report/
+# Dagster local instance (runtime state; created by `dagster dev` / compose)
+.dagster/
 
 # Secrets / local config — only .env.example is committed
 .env
 .env.*
 !.env.example
+
+# Machine-specific compose override (e.g. local port remaps) — never committed
+docker-compose.override.yml
 
 # Data & artifacts (do not commit real data or model artifacts)
 mlruns/

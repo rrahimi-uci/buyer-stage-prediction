@@ -97,5 +97,31 @@ class OnlineStore:
                 conn.execute(select(predictions_online.c.model_version).distinct()).scalars().all()
             )
 
+    def summary(self) -> dict:
+        """Read-only serving snapshot for dashboards/ops: rowcount, versions, class mix.
+
+        Cheap aggregate queries over ``predictions_online`` — a friendly companion to
+        ``check_consistency`` that returns *what* is served rather than a pass/fail list.
+        """
+        with self._engine.connect() as conn:
+            total = conn.execute(select(func.count()).select_from(predictions_online)).scalar_one()
+            versions = list(
+                conn.execute(select(predictions_online.c.model_version).distinct()).scalars().all()
+            )
+            class_rows = conn.execute(
+                select(predictions_online.c.predicted_class, func.count()).group_by(
+                    predictions_online.c.predicted_class
+                )
+            ).all()
+            last_scored = conn.execute(
+                select(func.max(predictions_online.c.scored_at))
+            ).scalar_one()
+        return {
+            "total": int(total),
+            "model_versions": versions,
+            "class_counts": {str(cls): int(n) for cls, n in class_rows},
+            "last_scored_at": last_scored,
+        }
+
 
 __all__ = ["OnlineStore"]

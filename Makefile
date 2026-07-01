@@ -4,7 +4,7 @@
 COMPOSE ?= docker compose
 EXAMPLE ?= buyer_stage
 
-.PHONY: help up down logs seed run materialize serve test lint typecheck demo new-example regen-golden
+.PHONY: help up down logs seed run materialize serve dashboard test lint typecheck demo new-example regen-golden
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
@@ -29,6 +29,12 @@ materialize: ## Materialize the same flow through the Dagster job (graph + asset
 
 serve: ## (Re)start the FastAPI service
 	$(COMPOSE) --profile core up -d --build api
+
+dashboard: ## Start the Streamlit control panel (compose `dashboard` profile, :8501)
+	$(COMPOSE) --profile dashboard up -d --build dashboard
+
+dashboard-local: ## Run the control panel locally (no Docker): pip install -e ".[dashboard]" first
+	streamlit run dashboard/app.py
 
 test: ## Run the test suite
 	$(COMPOSE) run --rm dagster pytest

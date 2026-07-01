@@ -14,7 +14,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # ---- dependency layer (cached) ----
-COPY pyproject.toml ./
+# README.md is copied too: pyproject's `readme = "README.md"` makes hatchling require it at
+# metadata-generation time, so the editable install below fails without it.
+COPY pyproject.toml README.md ./
 COPY src/automl_template/__init__.py src/automl_template/__init__.py
 RUN pip install --upgrade pip hatchling && pip install -e ".[dev]"
 
@@ -32,3 +34,11 @@ CMD ["dagster", "dev", "-m", "automl_template.dagster_defs.definitions", "-h", "
 FROM base AS api
 EXPOSE 8000
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# ---- dashboard target: optional Streamlit control panel (Apache-2.0) ----
+FROM base AS dashboard
+RUN pip install -e ".[dashboard]"
+EXPOSE 8501
+CMD ["streamlit", "run", "dashboard/app.py", \
+     "--server.address", "0.0.0.0", "--server.port", "8501", \
+     "--server.headless", "true", "--browser.gatherUsageStats", "false"]
