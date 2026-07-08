@@ -37,7 +37,7 @@ dependencies = [
 [project.optional-dependencies]
 # Heavier / different-license backends are opt-in (see docs/LICENSES.md).
 autogluon = ["autogluon.tabular~=1.1"]
-spark = ["pyspark~=3.5"]
+spark = ["pyspark>=3.5,<5.0"]
 # Optional Streamlit control panel (Apache-2.0). See dashboard/ and the `dashboard` make target.
 dashboard = ["streamlit~=1.40"]
 dev = [
