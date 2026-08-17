@@ -1,24 +1,21 @@
-<!-- Thanks for contributing! Keep the framework/example boundary crisp. -->
+## Summary
 
-## What & why
+<!-- What changed and why? Link the issue or ticket. -->
 
-<!-- What does this change and why? Link any issue: Closes #123 -->
+## Tests and validation
 
-## Type
+- [ ] Added or updated tests for changed behavior, or explained why tests are not applicable.
+- [ ] Ran the repository CI-equivalent test, lint, format, type, security, and build checks applicable to this change and recorded exact commands/results below.
+- [ ] Ran `git diff --check`.
+- [ ] Checked for secrets, unrelated changes, and generated-file drift.
 
-- [ ] feat
-- [ ] fix
-- [ ] docs
-- [ ] refactor / chore
-- [ ] test
+Validation commands and results:
 
-## Checklist
+## Risks and follow-up
 
-- [ ] `ruff check .` and `ruff format --check .` pass
-- [ ] `mypy` passes
-- [ ] `pytest` passes (added/updated tests for behavior changes)
-- [ ] No domain knowledge leaked into `src/automl_template/` / `api/` (examples only)
-- [ ] No new non-permissive dependency (or it is optional + documented in `docs/LICENSES.md`)
-- [ ] No data / secrets / model artifacts committed
-- [ ] `docs/ARCHITECTURE.md` updated if the asset graph, contracts, or stack changed
-- [ ] If the buyer-stage reshape changed: golden regenerated **and reviewed**
+<!-- State risks, limitations, migrations, deployment implications, and rollback notes. -->
+
+## Copilot handoff
+
+- [ ] This PR is ready for human review only after all applicable validation passes.
+- [ ] Copilot did not approve or merge this PR.
